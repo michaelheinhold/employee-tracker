@@ -1,4 +1,4 @@
-
+const db = require('../db/connection');
 
 const prompt = [
     {
@@ -19,7 +19,7 @@ const prompt = [
     {
         type: 'input',
         when: ({ option }) => option === 'Add a role',
-        name: 'roleName',
+        name: 'title',
         message: 'What is the name of the role?'
     },
     {
@@ -33,7 +33,58 @@ const prompt = [
         when: ({ option }) => option === 'Add a role',
         name: 'departmentId',
         message: 'What department is this role under?',
-        choices: () => ({ departmentName })
+        choices: () => {
+            let departmentsNames = [];
+            db.query(`SELECT name FROM departments`, function (err, rows) {
+                rows.forEach(e => {
+                    departmentsNames.push(e.name);
+                });
+            });
+            setTimeout(() => {
+                console.log(departmentsNames);
+                return departmentsNames;
+            }, 100);
+        }
+    },
+    {
+        type: 'input',
+        when: ({ option }) => option === 'Add an employee',
+        name: 'firstName',
+        message: `What is the employee's first name?`
+    },
+    {
+        type: 'input',
+        when: ({ option }) => option === 'Add an employee',
+        name: 'lastName',
+        message: `What is the employee's last name?`
+    },
+    {
+        type: 'list',
+        when: ({ option }) => option === 'Add an employee',
+        name: 'roleId',
+        message: `What is the employee's role?`,
+        choices: []
+    },
+    {
+        type: 'list',
+        when: ({ option }) => option === 'Add an employee',
+        name: 'managerId',
+        message: `What manager does this employee work under?`,
+        choices: []
+    },
+    {
+        type: 'list',
+        when: ({ option }) => option === 'Update an employee role',
+        name: 'employeeId',
+        message: 'For which employee would you like to update their role?',
+        choices: []
+    },
+    {
+        type: 'list',
+        when: ({ option }) => option === 'Update an employee role',
+        name: 'newRoleId',
+        message: 'What is their new role?',
+        choices: []
     }
 ];
 

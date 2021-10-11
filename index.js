@@ -29,7 +29,8 @@ function viewRoles() {
 }
 
 function viewEmployees () {
-    const mysql = `SELECT * FROM employees`;
+    const mysql = `SELECT employees.id AS employee_id, first_name, last_name, name AS department, manager_id AS reports_to, title, salary FROM employees, roles, departments 
+    WHERE roles.id = employees.roles_id AND departments.id = roles.departments_id;`;
 
     db.query(mysql, (err, rows) => {
         if(err) {
@@ -83,15 +84,74 @@ function addNewEmployee(firstName, lastName, rolesId, managerId){
     });
 }
 
-//runs the prompt
-// const questionuser = function(){ 
-//     inquirer.prompt(prompt).then(data=> {
-//         if (data.option !== 'Finish'){
-//             questionuser();
-//         } else {
-//             console.log(data);
-//         }
-//     })
-// };
+function updateEmployeeRole(newRoleId, employeeId) {
+    const mysql = `UPDATE employees SET roles_id = ?
+        WHERE id = ?`
 
-// questionuser();
+    const params = [newRoleId, employeeId];
+
+    db.query(mysql, params, (err, result) => {
+        if (err) {
+            console.log(err.message);
+            return;
+        } else if (!result.affectedRows){
+            console.log(`Employee not found`)
+        } else {
+            console.log(result);
+        }
+    });
+}
+
+
+
+//runs the prompt
+async function questionUser(){ 
+    inquirer.prompt(prompt).then(data=> {
+        switch (data.option){
+            case 'Finish':
+                console.log('Goodbye.');
+                break;
+            case 'View all departments':
+                viewDepartments();
+                break;
+            case 'View all roles':
+                viewRoles();
+                break;
+            case 'View all employees':
+                viewEmployees();
+                break;
+            case 'Add a department':
+                addNewDepartment(data.name);
+                break;
+            case 'Add a role':
+                addNewRole(data.title, data.salary, data.departmentId);
+                break;
+            case 'Add an employee':
+                addNewEmployee(data.firstName, data.lastName, data.rolesId, data.managerId);
+                break;
+            case 'Update an employee role':
+                updateEmployeeRole(data.newRoleId, data.employeeId);
+                break;
+        }
+        if(data.option !== 'Finish'){
+            setTimeout(() => {
+                questionUser(data);
+            }, 1000);
+        }
+    })
+};
+
+questionUser();
+// const letters = function() {
+//     let departmentsNames =[];
+//     db.query(`SELECT name FROM departments`, function(err, rows) {
+//         rows.forEach(e=>{
+//             departmentsNames.push(e.name);
+//         })
+//     });
+//     setTimeout(()=> {
+//         console.log(departmentsNames)
+//         return departmentsNames
+//     }, 100);
+// }
+// letters();
