@@ -1,7 +1,6 @@
 const inquirer =require('inquirer');
 const prompt = require('./src/prompt');
 const db = require('./db/connection');
-const inputCheck = require('./utils/inputCheck');
 
 //views all the departments
 function viewDepartments() {
@@ -51,29 +50,29 @@ function addNewDepartment(name) {
             console.log(err.message);
             return;
         }
-        console.log(rows);
     });
 }
 
-function addNewRole(title, salary, departmentId){
-  const errors = inputCheck(departmentId, 'departments_id');
-  if(errors){
-    console.log(`Error: ${errors}`);
-    return;
-  }
+function addNewRole(title, salary, departmentName){
+  let departmentId;
+  db.query(`SELECT id FROM departments WHERE TRIM(name) = TRIM(?)`, departmentName, (err, res)=>{
+    departmentId = (res[0].id);
+  });
 
     const mysql = `INSERT INTO roles (title, salary, departments_id)
         VALUES (?, ?, ?)`
 
-    const params = [title, salary, departmentId];
+    setTimeout(()=>{
+      const params = [title, salary, departmentId];
 
         db.query(mysql, params, (err, rows) => {
             if(err) {
                 console.log(err.message);
                 return;
             }
-            console.log(rows);
         });
+    }, 100)
+      
 }
 
 function addNewEmployee(firstName, lastName, rolesName, managerName){
@@ -103,23 +102,34 @@ function addNewEmployee(firstName, lastName, rolesName, managerName){
   }, 100);
 }
 
-function updateEmployeeRole(newRoleId, employeeId) {
+function updateEmployeeRole(newRoleName, employeeName) {
+  let newRoleId;
+  let employeeId;
+
+  db.query(`SELECT id FROM roles WHERE TRIM(title) = TRIM(?)`, newRoleName, (err, res)=>{
+    newRoleId = (res[0].id);
+  });
+  db.query(`SELECT id FROM employees WHERE TRIM(first_name) = TRIM(?)`, employeeName, (err, res)=>{
+    employeeId = (res[0].id);
+  });
+
     const mysql = `UPDATE employees SET roles_id = ?
         WHERE id = ?`
+    
+    setTimeout(()=>{
+      const params = [newRoleId, employeeId];
 
-    const params = [newRoleId, employeeId];
-
-    db.query(mysql, params, (err, result) => {
-        if (err) {
-            console.log(err.message);
-            return;
-        } else if (!result.affectedRows){
-            console.log(`Employee not found`)
-        } else {
-            console.log(result);
-        }
-    });
-}
+      db.query(mysql, params, (err, result) => {
+          if (err) {
+              console.log(err.message);
+              return;
+          } else if (!result.affectedRows){
+              console.log(`Employee not found`)
+          }
+      });
+    }, 100);
+      
+  }
 
 
 
@@ -161,16 +171,3 @@ async function questionUser(){
 };
 
 questionUser();
-// const letters = function() {
-//     let departmentsNames =[];
-//     db.query(`SELECT name FROM departments`, function(err, rows) {
-//         rows.forEach(e=>{
-//             departmentsNames.push(e.name);
-//         })
-//     });
-//     setTimeout(()=> {
-//         console.log(departmentsNames)
-//         return departmentsNames
-//     }, 100);
-// }
-// letters();
