@@ -1,6 +1,7 @@
 const inquirer =require('inquirer');
 const prompt = require('./src/prompt');
 const db = require('./db/connection');
+const inputCheck = require('./utils/inputCheck');
 
 //views all the departments
 function viewDepartments() {
@@ -55,6 +56,12 @@ function addNewDepartment(name) {
 }
 
 function addNewRole(title, salary, departmentId){
+  const errors = inputCheck(departmentId, 'departments_id');
+  if(errors){
+    console.log(`Error: ${errors}`);
+    return;
+  }
+
     const mysql = `INSERT INTO roles (title, salary, departments_id)
         VALUES (?, ?, ?)`
 
@@ -69,19 +76,31 @@ function addNewRole(title, salary, departmentId){
         });
 }
 
-function addNewEmployee(firstName, lastName, rolesId, managerId){
+function addNewEmployee(firstName, lastName, rolesName, managerName){
+  let rolesId;
+  let managerId;
+    db.query(`SELECT id FROM roles WHERE TRIM(title) = TRIM(?)`, rolesName, (err, res)=>{
+      rolesId = (res[0].id);
+    });
+    if(managerName === 'Is a manager'){
+      managerId = null;
+    } else{
+      db.query(`SELECT id FROM employees WHERE TRIM(first_name) = TRIM(?)`, managerName, (err, res)=>{
+        managerId = (res[0].id);
+      });
+    }
     const mysql = `INSERT INTO employees (first_name, last_name, roles_id, manager_id)
         VALUES (?, ?, ?, ?)`
-    
-    const params = [firstName, lastName, rolesId, managerId];
 
-    db.query(mysql, params, (err, rows) => {
+    setTimeout(()=>{
+      const params = [firstName, lastName, rolesId, managerId];
+      db.query(mysql, params, (err, rows) => {
         if (err) {
             console.log(err.message);
             return;
         }
-        console.log (rows);
-    });
+    })
+  }, 100);
 }
 
 function updateEmployeeRole(newRoleId, employeeId) {
@@ -115,10 +134,10 @@ async function questionUser(){
                 viewDepartments();
                 break;
             case 'View all roles':
-                viewRoles();
+              viewRoles();
                 break;
             case 'View all employees':
-                viewEmployees();
+              viewEmployees();
                 break;
             case 'Add a department':
                 addNewDepartment(data.name);
@@ -127,7 +146,7 @@ async function questionUser(){
                 addNewRole(data.title, data.salary, data.departmentId);
                 break;
             case 'Add an employee':
-                addNewEmployee(data.firstName, data.lastName, data.rolesId, data.managerId);
+                addNewEmployee(data.firstName, data.lastName, data.roleId, data.managerId);
                 break;
             case 'Update an employee role':
                 updateEmployeeRole(data.newRoleId, data.employeeId);
@@ -135,7 +154,7 @@ async function questionUser(){
         }
         if(data.option !== 'Finish'){
             setTimeout(() => {
-                questionUser(data);
+                questionUser();
             }, 1000);
         }
     })

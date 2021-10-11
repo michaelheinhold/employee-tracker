@@ -1,5 +1,29 @@
 const db = require('../db/connection');
 
+//options for roles
+var roleArr = [];
+function selectRole() {
+    db.query("SELECT * FROM roles", function(err, res) {
+    if (err) throw err
+    for (var i = 0; i < res.length; i++) {
+      roleArr.push(res[i].title);
+    }
+  })
+  return roleArr;
+}
+
+//options for managers
+var managersArr = ['Is a manager'];
+function selectManager() {
+  db.query("SELECT first_name, last_name FROM employees WHERE manager_id IS NULL", function(err, res) {
+    if (err) throw err
+    for (var i = 0; i < res.length; i++) {
+      managersArr.push(res[i].first_name);
+    }
+  })
+  return managersArr;
+}
+
 const prompt = [
     {
         //opening prompt
@@ -29,22 +53,10 @@ const prompt = [
         message: 'What is the salary for this role?'
     },
     {
-        type: 'list',
+        type: 'input',
         when: ({ option }) => option === 'Add a role',
         name: 'departmentId',
         message: 'What department is this role under?',
-        choices: () => {
-            let departmentsNames = [];
-            db.query(`SELECT name FROM departments`, function (err, rows) {
-                rows.forEach(e => {
-                    departmentsNames.push(e.name);
-                });
-            });
-            setTimeout(() => {
-                console.log(departmentsNames);
-                return departmentsNames;
-            }, 100);
-        }
     },
     {
         type: 'input',
@@ -59,32 +71,30 @@ const prompt = [
         message: `What is the employee's last name?`
     },
     {
-        type: 'list',
+        type: 'rawlist',
         when: ({ option }) => option === 'Add an employee',
         name: 'roleId',
         message: `What is the employee's role?`,
-        choices: []
+        choices: selectRole()
     },
     {
-        type: 'list',
+        type: 'rawlist',
         when: ({ option }) => option === 'Add an employee',
         name: 'managerId',
         message: `What manager does this employee work under?`,
-        choices: []
+        choices: selectManager()
     },
     {
-        type: 'list',
+        type: 'input',
         when: ({ option }) => option === 'Update an employee role',
         name: 'employeeId',
         message: 'For which employee would you like to update their role?',
-        choices: []
     },
     {
-        type: 'list',
+        type: 'input',
         when: ({ option }) => option === 'Update an employee role',
         name: 'newRoleId',
         message: 'What is their new role?',
-        choices: []
     }
 ];
 
